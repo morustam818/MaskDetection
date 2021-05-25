@@ -24,7 +24,7 @@ class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
     companion object{
         const val CAMERA_PERMISSION_REQUEST_CODE = 1
     }
-    private lateinit var faceMaskDetector: FaceMaskDetector
+//    private lateinit var faceMaskDetector: FaceMaskDetector
     private var detection: FaceMaskDetection? = null
     private var detectionFuture: Future<Unit>? = null
     private var shouldBeRecognizing = false
@@ -34,7 +34,7 @@ class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         OpenCVUtils.loadOpenCV(this)
-        faceMaskDetector = FaceMaskDetector(this,this)
+//        faceMaskDetector = FaceMaskDetector(this,this)
         if (useTopCamera || cameraPermissionAlreadyGranted()){
             QiSDK.register(this,this)
         }else{
