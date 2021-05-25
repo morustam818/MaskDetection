@@ -1,0 +1,4 @@
+include ':FaceMaskDetection'
+include ':OpenCV'
+include ':app'
+rootProject.name = "MaskDetection"
