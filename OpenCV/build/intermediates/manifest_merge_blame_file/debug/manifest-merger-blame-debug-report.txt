@@ -6,8 +6,8 @@
 6
 7    <uses-sdk
 8        android:minSdkVersion="23"
-8-->C:\Users\azmir\Desktop\Projects\pepper-mask-detection\OpenCV\AndroidManifest.xml
+8-->C:\Users\MORustam\Desktop\Projects\MaskDetection\OpenCV\AndroidManifest.xml
 9        android:targetSdkVersion="29" />
-9-->C:\Users\azmir\Desktop\Projects\pepper-mask-detection\OpenCV\AndroidManifest.xml
+9-->C:\Users\MORustam\Desktop\Projects\MaskDetection\OpenCV\AndroidManifest.xml
 10
 11</manifest>

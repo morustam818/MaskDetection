@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -13,12 +14,14 @@ import com.aldebaran.qi.sdk.QiContext
 import com.aldebaran.qi.sdk.QiSDK
 import com.aldebaran.qi.sdk.RobotLifecycleCallbacks
 import com.aldebaran.qi.sdk.design.activity.RobotActivity
+import com.camerakit.type.CameraFacing
 import com.softbankrobotics.facemaskdetection.FaceMaskDetection
 import com.softbankrobotics.facemaskdetection.capturer.BottomCameraCapturer
 import com.softbankrobotics.facemaskdetection.capturer.TopCameraCapturer
 import com.softbankrobotics.facemaskdetection.detector.AizooFaceMaskDetector
 import com.softbankrobotics.facemaskdetection.utils.OpenCVUtils
 import com.softbankrobotics.facemaskdetection.utils.TAG
+import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
     companion object{
@@ -35,7 +38,7 @@ class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
         setContentView(R.layout.activity_main)
         OpenCVUtils.loadOpenCV(this)
 //        faceMaskDetector = FaceMaskDetector(this,this)
-        if (useTopCamera || cameraPermissionAlreadyGranted()){
+        if (cameraPermissionAlreadyGranted()){
             QiSDK.register(this,this)
         }else{
             requestPermissionForCamera()
@@ -98,7 +101,10 @@ class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
         }
         detection = FaceMaskDetection(detector,capturer)
         shouldBeRecognizing = true
-        startDetecting()
+        btnStart?.setOnClickListener {
+            detectionFuture?.requestCancellation()
+            startDetecting()
+        }
     }
 
     override fun onRobotFocusLost() {
@@ -114,7 +120,6 @@ class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
         super.onResume()
         OpenCVUtils.loadOpenCV(this)
         shouldBeRecognizing = true
-        startDetecting()
     }
 
     override fun onPause() {
@@ -127,33 +132,76 @@ class MainActivity : RobotActivity(),RobotLifecycleCallbacks {
     override fun onDestroy() {
         super.onDestroy()
         detectionFuture?.requestCancellation()
-        QiSDK.unregister(this)
+        QiSDK.unregister(this,this)
     }
 
     private fun startDetecting() {
-        detectionFuture = detection?.start { faces ->
-            // Filter and sort the faces so that they're left to right and certain enough
-            val sortedFaces = faces
-                .filter { (it.confidence > 0.5) }
-                .sortedBy { -it.bb.left }
-            Log.i(TAG, "Filtered faces ${faces.size}, ->  ${sortedFaces.size}")
+        Toast.makeText(
+            this,
+            "DetectionStarted Please wait",
+            Toast.LENGTH_LONG
+        ).show()
+        ivResult?.visibility = View.GONE
+        btnStart?.visibility = View.GONE
+        pBar?.visibility = View.VISIBLE
+        try {
+            detectionFuture = detection?.start { faces ->
+                // Filter and sort the faces so that they're left to right and certain enough
+                val sortedFaces = faces
+//                    .filter { (it.confidence > 0.5) }
+                    .sortedBy { -it.bb.left }
+                Log.i(TAG, "Filtered faces ${faces.size}, ->  ${sortedFaces.size}")
 //            setFaces(sortedFaces)
-            // Now update the logic
-            val seesWithMask = sortedFaces.any { it.hasMask }
-            val seesWithoutMask = sortedFaces.any { !it.hasMask }
-            val numPeople = sortedFaces.size
+                // Now update the logic
+                val seesWithMask = sortedFaces.any { it.hasMask }
+                val seesWithoutMask = sortedFaces.any { !it.hasMask }
+                val numPeople = sortedFaces.size
 //            updateState(seesWithMask, seesWithoutMask, numPeople)
-            Log.i(TAG, "startDetecting: $seesWithMask $seesWithoutMask $numPeople")
-        }
-        detectionFuture?.thenConsume {
-            Log.i(
-                TAG,
-                "Detection future has finished: success=${it.isSuccess}, cancelled=${it.isCancelled}"
-            )
-            if (shouldBeRecognizing) {
-                Log.w(TAG, "Stopped, but it shouldn't have - starting it again")
-                startDetecting()
+                Toast.makeText(
+                    this,
+                    "NumberOfPeopleFound $numPeople",
+                    Toast.LENGTH_LONG
+                ).show()
+                Log.i(TAG, "startDetecting: $seesWithMask $seesWithoutMask $numPeople")
+                if (seesWithMask){
+                    updateUI(true)
+                }else if (seesWithoutMask){
+                    updateUI(false)
+                }
             }
+        }catch (e:Exception){
+            Toast.makeText(
+                this,
+                "FoundException ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
         }
+//        detectionFuture?.thenConsume {
+//            Log.i(
+//                TAG,
+//                "Detection future has finished: success=${it.isSuccess}, cancelled=${it.isCancelled}"
+//            )
+//            if (shouldBeRecognizing) {
+//                Log.w(TAG, "Stopped, but it shouldn't have - starting it again")
+//                startDetecting()
+//            }
+//        }
+    }
+    private fun updateUI(isMaskDetected: Boolean){
+        Toast.makeText(
+            this,
+            "UserHasWearAMask $isMaskDetected",
+            Toast.LENGTH_LONG
+        ).show()
+        if (isMaskDetected){
+            pBar?.visibility = View.GONE
+            ivResult?.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.baseline_done_24))
+            ivResult?.visibility = View.VISIBLE
+        }else{
+            pBar?.visibility = View.GONE
+            ivResult?.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.baseline_close_24))
+            ivResult?.visibility = View.VISIBLE
+        }
+        btnStart?.visibility = View.VISIBLE
     }
 }
